@@ -28,11 +28,10 @@ RUN pip install --upgrade pip && \
 
 # Create backend directory and copy current directory contents
 # This handles the case where you build from the /backend directory
-RUN mkdir -p /app/backend
-COPY . /app/backend
+COPY . /app
 
 # Expose the application port
 EXPOSE 8000
 
 # Run the application
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

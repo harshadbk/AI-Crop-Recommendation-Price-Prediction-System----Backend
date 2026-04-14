@@ -7,7 +7,7 @@ from langchain_weaviate.vectorstores import WeaviateVectorStore
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from backend.core.config import settings
+from core.config import settings
 
 class RAGService:
     def __init__(self):

@@ -1,8 +1,8 @@
 import json
 from fastapi import APIRouter, HTTPException
-from backend.models.request_models import PricePredictionRequest
-from backend.services.mandi_api_service import mandi_api_service
-from backend.services.rag_service import get_rag_service
+from models.request_models import PricePredictionRequest
+from services.mandi_api_service import mandi_api_service
+from services.rag_service import get_rag_service
 
 router = APIRouter(prefix="/api")
 

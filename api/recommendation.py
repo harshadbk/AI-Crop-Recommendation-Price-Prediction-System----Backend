@@ -1,8 +1,8 @@
 import json
 import traceback
 from fastapi import APIRouter, HTTPException
-from backend.models.request_models import RecommendationRequest
-from backend.services.rag_service import get_rag_service
+from models.request_models import RecommendationRequest
+from services.rag_service import get_rag_service
 
 router = APIRouter(prefix="/api")
 

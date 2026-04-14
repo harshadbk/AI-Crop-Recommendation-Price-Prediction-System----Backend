@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.request_models import SignupRequest, LoginRequest
-from backend.core.config import settings
+from models.request_models import SignupRequest, LoginRequest
+from core.config import settings
 from supabase import create_client, Client
 
 router = APIRouter(prefix="/auth")

@@ -12,8 +12,8 @@ load_dotenv()
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 3. Backend imports
-from backend.api import auth, recommendation, prediction, chat
-from backend.services.rag_service import get_rag_service
+from api import auth, recommendation, prediction, chat
+from services.rag_service import get_rag_service
 
 app = FastAPI(title="Crop AI RAG Backend")
 
@@ -36,7 +36,7 @@ def run_ingestion():
     """Heavy task to index data in Weaviate"""
     try:
         rag = get_rag_service()
-        data_dir = "backend/data"
+        data_dir = "data"
         mandi_path = os.path.join(data_dir, "mandi_data_2000_rows.csv")
         prod_path = os.path.join(data_dir, "Indian_crop_production_yield_dataset.csv")
         
@@ -64,4 +64,4 @@ async def root():
     return {"message": "Crop AI RAG API is live", "version": "2.1.0"}
 
 if __name__ == "__main__":
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

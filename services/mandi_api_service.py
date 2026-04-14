@@ -1,5 +1,5 @@
 import httpx
-from backend.core.config import settings
+from core.config import settings
 
 class MandiApiService:
     def __init__(self):

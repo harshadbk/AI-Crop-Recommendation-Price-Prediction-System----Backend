@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from backend.services.rag_service import get_rag_service
+from services.rag_service import get_rag_service
 
 router = APIRouter(prefix="/api")
 
