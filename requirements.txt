@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-multipart
+httpx
+supabase
+python-dotenv
+pydantic
+email-validator
+groq
+pandas
+langchain
+langchain-groq
+langchain-weaviate
+weaviate-client
+sentence-transformers
