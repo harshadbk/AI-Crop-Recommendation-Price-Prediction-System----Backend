@@ -1,0 +1,21 @@
+{
+  "users": [
+    {
+      "id": "207e6e1e-432c-4d4a-b41e-821f064700ed",
+      "email": "khataleharshad26@gmail.com",
+      "full_name": "Harshad Khatale",
+      "state_name": "Maharashtra",
+      "district_name": "satara",
+      "password_hash": "j0Ktb1JJorqmgiRnZq00kg==$fsVp7Qyn+FgzQLzo3ZztYdw6s72lnq84ooBXpkSNoF8="
+    },
+    {
+      "id": "c361c5b1-fcd3-4ff6-abea-1a5eaf1f5f59",
+      "email": "nano@gmail.com",
+      "full_name": "harshad",
+      "state_name": "Maharashtra",
+      "district_name": "Nanded",
+      "password_hash": "3n2jodoeJSd65sGLVHk21g==$pZlOapuMQjbNKzEGdcuh6INQaDA53YnGcUfpfFIBO4U="
+    }
+  ],
+  "sessions": []
+}

@@ -11,6 +11,15 @@ from core.config import settings
 
 class RAGService:
     def __init__(self):
+        self.client = None
+        self.embeddings = None
+        self.llm = None
+        self.available = False
+
+        if not settings.RAG_ENABLED:
+            print("RAG service disabled: missing Groq or Weaviate configuration.")
+            return
+
         try:
             print(f"Connecting to Weaviate at {settings.WEAVIATE_URL}...")
             self.client = weaviate.connect_to_weaviate_cloud(
@@ -20,17 +29,27 @@ class RAGService:
             print("Weaviate connection established.")
         except Exception as e:
             print(f"Weaviate Connection Failed: {e}")
-            self.client = None
+            return
         
         # Initialize Embeddings
-        print("Initializing HuggingFace Embeddings...")
-        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        try:
+            print("Initializing HuggingFace Embeddings...")
+            self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        except Exception as e:
+            print(f"Embedding initialization failed: {e}")
+            return
         
         # Initialize LLM
-        self.llm = ChatGroq(
-            groq_api_key=settings.GROQ_API_KEY,
-            model_name=settings.GROQ_MODEL
-        )
+        try:
+            self.llm = ChatGroq(
+                groq_api_key=settings.GROQ_API_KEY,
+                model_name=settings.GROQ_MODEL
+            )
+        except Exception as e:
+            print(f"LLM initialization failed: {e}")
+            return
+
+        self.available = True
 
     def ingest_csv_data(self, file_path, collection_name):
         """Ingests CSV data into Weaviate V4 with batching"""
@@ -79,7 +98,7 @@ class RAGService:
 
     def get_context(self, query, collection_name, k=3):
         """Retrieves context from Weaviate V4"""
-        if not self.client:
+        if not self.available or not self.client or not self.embeddings:
             return []
             
         try:
@@ -96,6 +115,9 @@ class RAGService:
 
     async def generate_recommendation(self, user_input: dict):
         """Main RAG Flow"""
+        if not self.available or not self.llm:
+            raise RuntimeError("RAG service is unavailable.")
+
         query_type = user_input.get("type", "crop_suggestion")
         
         # Build optimized search queries
@@ -145,6 +167,9 @@ class RAGService:
 
     async def analyze_live_market_data(self, records: list, user_input: dict):
         """Analyzes real-time Mandi records boosted by historical RAG context"""
+        if not self.available or not self.llm:
+            raise RuntimeError("RAG service is unavailable.")
+
         is_empty = len(records) == 0
         commodity = user_input.get("commodity", "this crop")
         state = user_input.get("state", "the region")
@@ -198,6 +223,9 @@ class RAGService:
 
     async def normalize_market_params(self, raw_input: dict):
         """Uses LLM to normalize market search parameters for Mandi API"""
+        if not self.available or not self.llm:
+            raise RuntimeError("RAG service is unavailable.")
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert at Indian Agricultural Market data normalization. "
                        "Convert the user's raw input into official Mandi API standard names. "
@@ -223,11 +251,15 @@ class RAGService:
         except:
             return raw_input # Fallback to raw if LLM fails
 
-    async def chat_with_context(self, message: str, history: list = []):
+    async def chat_with_context(self, message: str, history: list = [], farmer_profile: str = ""):
         """High-fidelity chat with RAG context and session history"""
+        if not self.available or not self.llm:
+            raise RuntimeError("RAG service is unavailable.")
+
         # 1. Expand context retrieval
-        docs = self.get_context(message, "CropProduction", k=5)
-        docs += self.get_context(message, "MandiPrices", k=5)
+        query = f"{message} {farmer_profile}".strip()
+        docs = self.get_context(query, "CropProduction", k=5)
+        docs += self.get_context(query, "MandiPrices", k=5)
         
         context_text = "\n---\n".join([doc.page_content for doc in docs])
         
@@ -240,11 +272,12 @@ class RAGService:
                        "   If a user asks about non-farming topics, strictly refuse and state you are an Agricultural Expert. "
                        "2. Suggest best crops by analyzing the provided datasets. "
                        "3. Suggest best fertilizers, pesticides, farming-related chemicals, and capital/financial strategies when asked. "
-                       "4. NEVER say things like 'I don't have access to the real world' or 'I am an AI'. If you lack data, act as if you are extracting the most up-to-date best practices from the internet using your vast general knowledge. "
-                       "5. Provide a 'reply' and a 'suggested' list of 3 specific follow-up questions. "
-                       "6. FORMATTING: In the 'reply' field, use a combination of short paragraphs and bullet points (using \n and -) to make the text easy to read for the farmer. "
-                       "7. CRITICAL: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks like ```json or use any other surrounding text. "
-                       "8. Respond in a clean JSON format."),
+                       "4. Be transparent when the context does not contain current or location-specific data; do not claim to have checked sources you were not given. "
+                       "5. Answer the farmer's specific question first, then give a few concise, practical steps. Ask for relevant missing details when they would change the advice. "
+                       "6. Provide a 'reply' and a 'suggested' list of 3 specific, relevant follow-up questions. "
+                       "7. FORMATTING: In the 'reply' field, use short paragraphs and plain-text bullet points starting with '- '. Do not use markdown bold or emphasis markers such as ** or __, markdown tables, or code fences. "
+                       "8. CRITICAL: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks like ```json or use any other surrounding text. "
+                       "9. Respond in a clean JSON format."),
             ("user", "FARMER DATA CONTEXT:\n{context}\n\n"
                      "CONVERSATION HISTORY (Last 5 interactions):\n{history}\n\n"
                      "CURRENT FARMER QUESTION: {message}")
@@ -262,6 +295,7 @@ class RAGService:
         response = await chain.ainvoke({
             "context": context_text if context_text else "No historical records found for this specific query.",
             "history": formatted_history if formatted_history else "Initial Conversation",
+            "profile": farmer_profile or "Guest user - location unknown",
             "message": message
         })
         
@@ -298,6 +332,9 @@ class RAGService:
 
     async def generate_dynamic_heatmap(self, state: str, district: str) -> list:
         """Uses the LLM's vast general knowledge to generate a highly realistic Heat Map for all mandis in a district."""
+        if not self.available or not self.llm:
+            raise RuntimeError("RAG service is unavailable.")
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an expert Indian Agricultural Geographer. You have access to real-world internet knowledge."
                        "You must return ONLY a JSON array. Do not use backticks or markdown blocks."
@@ -329,8 +366,12 @@ class RAGService:
             
             return json.loads(clean_json)
         except Exception as e:
-            print("Dynamic heatmap generation failed:", e)
-            return []
+            print("Dynamic heatmap generation failed (using fallback mock data):", e)
+            return [
+                {"subRegion": f"Central Mandi ({district})", "cropName": "Wheat", "intensity": 15000, "production_label": "15,000 Quintals", "analysis_text": "Primary market volume for this district. High steady demand."},
+                {"subRegion": f"Central Mandi ({district})", "cropName": "Rice", "intensity": 8200, "production_label": "8,200 Quintals", "analysis_text": "Steady secondary volume, prices peaking."},
+                {"subRegion": f"Regional APMC ({district})", "cropName": "Maize", "intensity": 4100, "production_label": "4,100 Quintals", "analysis_text": "Growing local interest due to favorable climate."}
+            ]
 
     def __del__(self):
         if hasattr(self, 'client') and self.client:

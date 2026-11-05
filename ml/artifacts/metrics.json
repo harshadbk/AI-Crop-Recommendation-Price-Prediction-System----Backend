@@ -1,0 +1,44 @@
+{
+  "trained_at": "2026-11-05 20:43:28",
+  "yield_model": {
+    "train_rows": 507710,
+    "test_rows": 53201,
+    "split": "train <= 2016, test 2017-2020",
+    "model": {
+      "r2_log": 0.8934,
+      "median_abs_pct_error": 21.39
+    },
+    "baseline_district_crop_mean": {
+      "r2_log": -0.941,
+      "median_abs_pct_error": 88.61
+    },
+    "best_iteration": 447
+  },
+  "price_model": {
+    "train_rows": 12086,
+    "test_rows": 1598,
+    "split": "train <= 2025-02, test 2025-03..2025-05 (1-month-ahead)",
+    "model_median_abs_pct_error": 9.05,
+    "naive_median_abs_pct_error": 9.09,
+    "direction_accuracy_pct": 47.4,
+    "best_iteration": 0
+  },
+  "soil_model": {
+    "rows": 2200,
+    "crops": 22,
+    "split": "stratified 80/20 + 5-fold cross-validation",
+    "test_accuracy_pct": 99.32,
+    "test_macro_f1": 0.9932,
+    "cv_accuracy_pct": 99.41,
+    "feature_importance": {
+      "rainfall": 0.226,
+      "humidity": 0.217,
+      "K": 0.178,
+      "P": 0.15,
+      "N": 0.103,
+      "temperature": 0.074,
+      "ph": 0.053
+    },
+    "model": "RandomForestClassifier(n_estimators=300)"
+  }
+}
